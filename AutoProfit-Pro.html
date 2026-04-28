@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AutoProfit Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a08;--surface:#111110;--surface2:#1a1a18;--surface3:#222220;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
+  --text:#f0ede6;--muted:#777770;--accent:#c8f060;--accent2:#f0c060;
+  --red:#ff6b5b;--green:#60d090;--blue:#60b0f0;
+  --font-display:'DM Serif Display',serif;
+  --font-body:'Instrument Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --radius:14px;--radius-sm:8px;--radius-xs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5;overscroll-behavior:none}
+
+/* AUTH SCREEN */
+.auth-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;z-index:500;transition:opacity .4s}
+.auth-screen.hidden{opacity:0;pointer-events:none}
+.auth-logo{font-family:var(--font-display);font-size:36px;color:var(--accent);margin-bottom:6px;letter-spacing:-1px}
+.auth-logo span{color:var(--muted);font-style:italic}
+.auth-tagline{font-size:12px;color:var(--muted);font-family:var(--font-mono);margin-bottom:40px;letter-spacing:1px}
+.auth-box{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:24px}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;cursor:pointer;color:var(--muted);transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.auth-form{display:none}.auth-form.active{display:block}
+.auth-field{margin-bottom:14px}
+.auth-field label{font-size:11px;color:var(--muted);font-family:var(--font-mono);display:block;margin-bottom:5px;letter-spacing:.5px}
+.auth-field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border .2s;-webkit-appearance:none}
+.auth-field input:focus{border-color:var(--accent)}
+.auth-btn{width:100%;padding:12px;background:var(--accent);color:#0a0a08;border:none;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.auth-btn:active{opacity:.85}
+.auth-error{font-size:12px;color:var(--red);margin-top:8px;text-align:center;min-height:18px;font-family:var(--font-mono)}
+.auth-info{font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+
+/* MAIN APP */
+.app{display:none;flex-direction:column;height:100vh;max-width:480px;margin:0 auto}
+.app.show{display:flex}
+
+.header{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:var(--font-display);font-size:20px;color:var(--accent);letter-spacing:-0.5px}
+.logo span{color:var(--muted);font-style:italic;font-size:17px}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-pill{font-size:11px;color:var(--muted);font-family:var(--font-mono);background:var(--surface2);padding:4px 10px;border-radius:99px;border:1px solid var(--border)}
+.logout-btn{background:transparent;border:1px solid var(--border);border-radius:var(--radius-xs);padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--font-mono);transition:all .2s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+.nav{display:flex;gap:4px;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.nav-btn{flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:12px;cursor:pointer;transition:all .2s;text-align:center}
+.nav-btn.active{background:var(--accent);color:#0a0a08;border-color:var(--accent);font-weight:600}
+
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view{display:none;padding:16px 20px 80px}
+.view.active{display:block}
+
+/* CARDS & FORM */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-family:var(--font-mono);margin-bottom:14px}
+.form-group{margin-bottom:12px}
+.form-group label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;font-family:var(--font-mono)}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border .2s;-webkit-appearance:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group select option{background:var(--surface2)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .full{grid-column:1/-1}
+
+/* PHOTO */
+.photo-upload{border:2px dashed var(--border2);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;background:var(--surface2)}
+.photo-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-upload-icon{font-size:28px;margin-bottom:6px}
+.photo-upload-text{font-size:12px;color:var(--muted)}
+.photo-upload-text strong{color:var(--accent)}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.photo-thumb{position:relative;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.75);border:none;color:#fff;width:22px;height:22px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* EXPENSES */
+.exp-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.exp-row:last-child{border-bottom:none}
+.exp-row input{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:7px 10px;color:var(--text);font-size:13px;font-family:var(--font-body);-webkit-appearance:none;outline:none}
+.exp-row input:first-child{flex:1}
+.exp-row input[type=number]{width:95px}
+.exp-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;line-height:1}
+
+/* BUTTONS */
+.btn{padding:10px 20px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;color:var(--text);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all .2s}
+.btn.primary{background:var(--accent);color:#0a0a08;border-color:var(--accent);font-weight:600}
+.btn.small{padding:6px 14px;font-size:12px}
+.btn.danger{border-color:rgba(255,107,91,.3);color:var(--red)}
+.btn.whatsapp{background:#25d366;color:#fff;border-color:#25d366;font-weight:500}
+.btn.excel{background:#1d6f42;color:#fff;border-color:#1d6f42;font-weight:500}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* PROFIT BOX */
+.profit-box{background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-top:12px;border:1px solid var(--border);display:none}
+.profit-box.show{display:block}
+.profit-main{font-family:var(--font-display);font-size:32px;color:var(--accent)}
+.profit-main.neg{color:var(--red)}
+.profit-sub{font-size:11px;color:var(--muted);font-family:var(--font-mono);margin-bottom:8px}
+.profit-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pill{font-size:11px;padding:4px 10px;border-radius:99px;font-family:var(--font-mono);background:var(--surface3)}
+
+/* METRICS */
+.metric-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.metric-grid.three{grid-template-columns:repeat(3,1fr)}
+.metric{background:var(--surface2);border-radius:var(--radius-sm);padding:12px}
+.metric-label{font-size:10px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.5px;margin-bottom:4px}
+.metric-val{font-size:18px;font-weight:500}
+.metric-val.green{color:var(--green)}.metric-val.red{color:var(--red)}.metric-val.amber{color:var(--accent2)}.metric-val.blue{color:var(--blue)}.metric-val.accent{color:var(--accent)}
+
+/* VEHICLE CARDS */
+.vc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.vc-photo{width:100%;height:170px;object-fit:cover;display:block;cursor:pointer}
+.vc-body{padding:14px}
+.vc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.vc-name{font-size:15px;font-weight:500}
+.vc-date{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--font-mono)}
+.badge{font-size:10px;padding:3px 9px;border-radius:99px;font-family:var(--font-mono);font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge.active{background:rgba(96,176,240,.15);color:var(--blue);border:1px solid rgba(96,176,240,.3)}
+.badge.sold{background:rgba(96,208,144,.15);color:var(--green);border:1px solid rgba(96,208,144,.3)}
+.badge.loss{background:rgba(255,107,91,.15);color:var(--red);border:1px solid rgba(255,107,91,.3)}
+.vc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.vc-stat{background:var(--surface2);border-radius:6px;padding:8px}
+.vs-l{font-size:10px;color:var(--muted);font-family:var(--font-mono)}
+.vs-v{font-size:13px;font-weight:500;margin-top:2px}
+.text-green{color:var(--green)}.text-red{color:var(--red)}.text-amber{color:var(--accent2)}
+.vc-exp-list{border-top:1px solid var(--border);padding-top:10px;margin-top:8px}
+.vc-exp-item{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0}
+.vc-photos-row{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+.vc-photos-row img{width:76px;height:76px;object-fit:cover;border-radius:var(--radius-sm);flex-shrink:0;border:1px solid var(--border);cursor:pointer}
+.vc-actions{display:flex;gap:6px;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;flex-wrap:wrap}
+
+/* FILTER */
+.filter-row{display:flex;gap:6px;margin-bottom:14px}
+.filter-btn{padding:5px 14px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;font-family:var(--font-mono)}
+.filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+
+/* STATS */
+.month-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
+.month-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.bar-track{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.stat-section-title{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+
+/* LIGHTBOX */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1000;align-items:center;justify-content:center}
+.lightbox.show{display:flex}
+.lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:var(--radius)}
+.lightbox-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:38px;height:38px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#0a0a08;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:900;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted);font-family:var(--font-mono);font-size:12px;gap:8px}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.4}
+.sep{border:none;border-top:1px solid var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-logo">AutoProfit <span>pro</span></div>
+  <div class="auth-tagline">CONTROL DE VEHÍCULOS · INVENTARIO & GANANCIAS</div>
+
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Iniciar sesión</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Crear cuenta</div>
+    </div>
+
+    <div class="auth-form active" id="form-login">
+      <div class="auth-field"><label>Usuario</label><input id="login-user" type="text" placeholder="Tu nombre de usuario" autocomplete="username"></div>
+      <div class="auth-field"><label>Contraseña</label><input id="login-pass" type="password" placeholder="Tu contraseña" autocomplete="current-password"></div>
+      <button class="auth-btn" onclick="doLogin()">Entrar</button>
+      <div class="auth-error" id="login-err"></div>
+    </div>
+
+    <div class="auth-form" id="form-register">
+      <div class="auth-field"><label>Nombre completo</label><input id="reg-name" type="text" placeholder="Ej: Keiwin Valbuena"></div>
+      <div class="auth-field"><label>Usuario (sin espacios)</label><input id="reg-user" type="text" placeholder="Ej: keiwin7" autocomplete="username"></div>
+      <div class="auth-field"><label>Contraseña</label><input id="reg-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+      <div class="auth-field"><label>Confirmar contraseña</label><input id="reg-pass2" type="password" placeholder="Repite tu contraseña" autocomplete="new-password"></div>
+      <button class="auth-btn" onclick="doRegister()">Crear cuenta</button>
+      <div class="auth-error" id="reg-err"></div>
+    </div>
+
+    <div class="auth-info">🔒 Tus datos se guardan de forma segura<br>y permanecen aunque cierres la app</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="main-app">
+  <div class="header">
+    <div class="logo">AutoProfit <span>pro</span></div>
+    <div class="header-right">
+      <span class="user-pill" id="user-pill">—</span>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showView('add',this)">+ Nuevo</button>
+    <button class="nav-btn" onclick="showView('list',this)">Vehículos</button>
+    <button class="nav-btn" onclick="showView('stats',this)">Estadísticas</button>
+  </nav>
+
+  <div class="content">
+    <!-- ADD VIEW -->
+    <div id="view-add" class="view active">
+      <div class="card">
+        <div class="card-title">Fotos del vehículo</div>
+        <div class="photo-upload">
+          <input type="file" accept="image/*" multiple onchange="handlePhotos(this)">
+          <div class="photo-upload-icon">📷</div>
+          <div class="photo-upload-text">Toca para agregar fotos<br><strong>Puedes subir varias</strong></div>
+        </div>
+        <div class="photo-preview-grid" id="photo-preview"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Información del vehículo</div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <input id="v-desc" type="text" placeholder="Ej: Toyota Camry 2019 gris">
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Precio de compra ($)</label><input id="v-buy" type="number" min="0" placeholder="0" oninput="previewProfit()"></div>
+          <div class="form-group"><label>Fecha de compra</label><input id="v-date" type="date"></div>
+          <div class="form-group"><label>Millas</label><input id="v-miles" type="number" min="0" placeholder="0"></div>
+          <div class="form-group"><label>Condición</label>
+            <select id="v-cond"><option>Excelente</option><option>Buena</option><option>Regular</option><option>Necesita trabajo</option></select>
+          </div>
+          <div class="form-group full"><label>Notas</label><textarea id="v-notes" placeholder="Sin accidentes, 2 dueños previos..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gastos del vehículo</div>
+        <div id="exp-list"></div>
+        <button class="btn small" onclick="addExp()" style="margin-top:10px">+ Agregar gasto</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Venta</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Precio de venta ($)</label><input id="v-sell" type="number" min="0" placeholder="0" oninput="previewProfit()"></div>
+          <div class="form-group"><label>Estado</label>
+            <select id="v-status"><option value="active">En inventario</option><option value="sold">Vendido</option></select>
+          </div>
+        </div>
+        <div class="profit-box" id="profit-preview">
+          <div class="profit-sub">Ganancia estimada</div>
+          <div class="profit-main" id="prev-gain">$0</div>
+          <div class="profit-pills">
+            <span class="pill">Inversión: <span id="prev-inv">$0</span></span>
+            <span class="pill">Margen: <span id="prev-margin">0%</span></span>
+            <span class="pill">ROI: <span id="prev-roi">0%</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="saveVehicle()" id="save-btn">Guardar vehículo</button>
+        <button class="btn" onclick="clearForm()">Limpiar</button>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div id="view-list" class="view">
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Todos</button>
+        <button class="filter-btn" onclick="setFilter('active',this)">Inventario</button>
+        <button class="filter-btn" onclick="setFilter('sold',this)">Vendidos</button>
+      </div>
+      <div id="vehicle-list"></div>
+    </div>
+
+    <!-- STATS VIEW -->
+    <div id="view-stats" class="view">
+      <div id="stats-content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ─── STORAGE ENGINE ─────────────────────────────────────────────────────────
+// Uses localStorage keyed per user — persists across sessions on same device
+// On different devices, user must re-enter data (no server needed)
+const APP_KEY = 'autoprofit_users_v1';
+const SESSION_KEY = 'autoprofit_session_v1';
+
+function getAllUsers(){try{return JSON.parse(localStorage.getItem(APP_KEY))||{};}catch(e){return{};}}
+function saveAllUsers(u){localStorage.setItem(APP_KEY,JSON.stringify(u));}
+function getUserData(username){const u=getAllUsers();return u[username]||{vehicles:[]};}
+function saveUserData(username,data){const u=getAllUsers();u[username]=data;saveAllUsers(u);}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY))||null;}catch(e){return null;}}
+function saveSession(s){localStorage.setItem(SESSION_KEY,JSON.stringify(s));}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+function hashPass(p){let h=0;for(let i=0;i<p.length;i++){h=(Math.imul(31,h)+p.charCodeAt(i))|0;}return h.toString(36);}
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentUser = null;
+let vehicles = [];
+let tempExp = [];
+let tempPhotos = [];
+let editingId = null;
+let currentFilter = 'all';
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+function switchAuthTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='login'?0:1)));
+  document.getElementById('form-login').classList.toggle('active',tab==='login');
+  document.getElementById('form-register').classList.toggle('active',tab==='register');
+  document.getElementById('login-err').textContent='';
+  document.getElementById('reg-err').textContent='';
+}
+
+function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const user=document.getElementById('reg-user').value.trim().toLowerCase().replace(/\s/g,'');
+  const pass=document.getElementById('reg-pass').value;
+  const pass2=document.getElementById('reg-pass2').value;
+  const err=document.getElementById('reg-err');
+  if(!name||!user||!pass){err.textContent='Completa todos los campos.';return;}
+  if(user.length<3){err.textContent='Usuario mínimo 3 caracteres.';return;}
+  if(pass.length<6){err.textContent='Contraseña mínimo 6 caracteres.';return;}
+  if(pass!==pass2){err.textContent='Las contraseñas no coinciden.';return;}
+  const users=getAllUsers();
+  if(users[user]){err.textContent='Ese usuario ya existe. Elige otro.';return;}
+  users[user]={name,passHash:hashPass(pass),vehicles:[],createdAt:new Date().toISOString()};
+  saveAllUsers(users);
+  showToast('Cuenta creada ✓');
+  loginUser(user,name);
+}
+
+function doLogin(){
+  const user=document.getElementById('login-user').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-err');
+  if(!user||!pass){err.textContent='Ingresa usuario y contraseña.';return;}
+  const users=getAllUsers();
+  if(!users[user]||users[user].passHash!==hashPass(pass)){err.textContent='Usuario o contraseña incorrectos.';return;}
+  loginUser(user,users[user].name);
+}
+
+function loginUser(username,name){
+  currentUser={username,name};
+  saveSession(currentUser);
+  const data=getUserData(username);
+  vehicles=data.vehicles||[];
+  document.getElementById('user-pill').textContent=name.split(' ')[0];
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.add('show');
+  updateHeaderCount();
+}
+
+function doLogout(){
+  if(!confirm('¿Cerrar sesión?'))return;
+  clearSession();
+  currentUser=null;vehicles=[];tempExp=[];tempPhotos=[];editingId=null;
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('main-app').classList.remove('show');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+  clearForm();
+}
+
+function persist(){
+  if(!currentUser)return;
+  const data=getUserData(currentUser.username);
+  data.vehicles=vehicles;
+  saveUserData(currentUser.username,data);
+}
+
+function updateHeaderCount(){
+  // reflected in nav only
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function fmt(n){return'$'+Math.round(n).toLocaleString('en-US');}
+function pct(n){return(Math.round(n*10)/10)+'%';}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('show');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('show');}
+
+// ─── VIEWS ───────────────────────────────────────────────────────────────────
+function showView(v,btn){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  btn?.classList.add('active');
+  if(v==='list')renderList();
+  if(v==='stats')renderStats();
+  document.querySelector('.content').scrollTop=0;
+}
+
+// ─── PHOTOS ──────────────────────────────────────────────────────────────────
+function handlePhotos(input){
+  Array.from(input.files).forEach(file=>{
+    // Compress image before storing
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const MAX=800;
+        let w=img.width,h=img.height;
+        if(w>MAX){h=h*MAX/w;w=MAX;}
+        if(h>MAX){w=w*MAX/h;h=MAX;}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        tempPhotos.push(canvas.toDataURL('image/jpeg',0.7));
+        renderPhotoPreviews();
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function renderPhotoPreviews(){
+  document.getElementById('photo-preview').innerHTML=tempPhotos.map((src,i)=>`
+    <div class="photo-thumb">
+      <img src="${src}" onclick="openLightbox('${src}')">
+      <button class="photo-del" onclick="tempPhotos.splice(${i},1);renderPhotoPreviews()">×</button>
+    </div>`).join('');
+}
+
+// ─── EXPENSES ────────────────────────────────────────────────────────────────
+function addExp(desc='',amt=''){
+  const i=tempExp.length;
+  tempExp.push({desc,amt:parseFloat(amt)||0});
+  const row=document.createElement('div');
+  row.className='exp-row';row.id='exp-'+i;
+  row.innerHTML=`<input type="text" placeholder="Reparación, pintura, título..." value="${desc}" oninput="tempExp[${i}].desc=this.value">
+    <input type="number" placeholder="$0" value="${amt||''}" min="0" oninput="tempExp[${i}].amt=parseFloat(this.value)||0;previewProfit()">
+    <button class="exp-del" onclick="removeExp(${i})">×</button>`;
+  document.getElementById('exp-list').appendChild(row);
+}
+function removeExp(i){document.getElementById('exp-'+i)?.remove();tempExp[i]={removed:true};previewProfit();}
+function getTotalExp(){return tempExp.filter(e=>!e.removed).reduce((s,e)=>s+(e.amt||0),0);}
+
+// ─── PROFIT PREVIEW ──────────────────────────────────────────────────────────
+function previewProfit(){
+  const buy=parseFloat(document.getElementById('v-buy').value)||0;
+  const sell=parseFloat(document.getElementById('v-sell').value)||0;
+  const inv=buy+getTotalExp();
+  const gain=sell-inv;
+  const margin=sell>0?gain/sell*100:0;
+  const roi=inv>0?gain/inv*100:0;
+  const box=document.getElementById('profit-preview');
+  if(sell>0||buy>0){
+    box.classList.add('show');
+    const gEl=document.getElementById('prev-gain');
+    gEl.textContent=fmt(gain);gEl.className='profit-main'+(gain<0?' neg':'');
+    document.getElementById('prev-inv').textContent=fmt(inv);
+    document.getElementById('prev-margin').textContent=pct(margin);
+    document.getElementById('prev-roi').textContent=pct(roi);
+  }else{box.classList.remove('show');}
+}
+
+// ─── SAVE / CLEAR ────────────────────────────────────────────────────────────
+function saveVehicle(){
+  const desc=document.getElementById('v-desc').value.trim();
+  if(!desc){showToast('Agrega una descripción');return;}
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Guardando...';btn.disabled=true;
+  const buy=parseFloat(document.getElementById('v-buy').value)||0;
+  const sell=parseFloat(document.getElementById('v-sell').value)||0;
+  const exps=tempExp.filter(e=>!e.removed&&(e.desc||e.amt));
+  const totalExp=exps.reduce((s,e)=>s+e.amt,0);
+  const inv=buy+totalExp;
+  const gain=sell-inv;
+  const margin=sell>0?gain/sell*100:0;
+  const roi=inv>0?gain/inv*100:0;
+  const v={
+    id:editingId||Date.now(),desc,buy,sell,
+    date:document.getElementById('v-date').value,
+    miles:document.getElementById('v-miles').value,
+    cond:document.getElementById('v-cond').value,
+    notes:document.getElementById('v-notes').value,
+    status:document.getElementById('v-status').value,
+    expenses:exps,totalExp,inv,gain,margin,roi,
+    photos:tempPhotos.slice(),
+    savedAt:new Date().toISOString()
+  };
+  if(editingId){const idx=vehicles.findIndex(x=>x.id===editingId);if(idx>-1)vehicles[idx]=v;editingId=null;}
+  else{vehicles.push(v);}
+  persist();
+  clearForm();
+  btn.textContent='Guardar vehículo';btn.disabled=false;
+  showToast('Vehículo guardado ✓');
+}
+
+function clearForm(){
+  ['v-desc','v-buy','v-sell','v-miles','v-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('v-cond').value='Excelente';
+  document.getElementById('v-status').value='active';
+  document.getElementById('exp-list').innerHTML='';
+  document.getElementById('photo-preview').innerHTML='';
+  tempExp=[];tempPhotos=[];editingId=null;
+  document.getElementById('profit-preview').classList.remove('show');
+}
+
+// ─── LIST ────────────────────────────────────────────────────────────────────
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderList();
+}
+
+function renderList(){
+  const el=document.getElementById('vehicle-list');
+  const list=(currentFilter==='all'?vehicles:vehicles.filter(v=>v.status===currentFilter)).slice().reverse();
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🚗</div><div class="empty-text">No hay vehículos aquí aún.</div></div>`;return;}
+  el.innerHTML=list.map(v=>{
+    const bc=v.status==='sold'?(v.gain>=0?'sold':'loss'):'active';
+    const bt=v.status==='sold'?(v.gain>=0?'✓ Vendido':'↓ Pérdida'):'● Inventario';
+    const gc=v.gain>0?'text-green':v.gain<0?'text-red':'text-amber';
+    const cover=v.photos?.length?`<img class="vc-photo" src="${v.photos[0]}" onclick="openLightbox('${v.photos[0]}')" loading="lazy">`:'';
+    const morePhotos=v.photos?.length>1?`<div class="vc-photos-row">${v.photos.slice(1).map(s=>`<img src="${s}" onclick="openLightbox('${s}')" loading="lazy">`).join('')}</div>`:'';
+    const expHtml=v.expenses?.length?`<div class="vc-exp-list">${v.expenses.map(e=>`<div class="vc-exp-item"><span>${e.desc||'Gasto'}</span><span>${fmt(e.amt)}</span></div>`).join('')}</div>`:'';
+    const notesHtml=v.notes?`<div style="font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${v.notes}</div>`:'';
+    return `<div class="vc">${cover}<div class="vc-body">${morePhotos}
+      <div class="vc-top"><div><div class="vc-name">${v.desc}</div><div class="vc-date">${v.date||'—'} · ${v.miles?v.miles+' mi':'—'} · ${v.cond}</div></div><span class="badge ${bc}">${bt}</span></div>
+      <div class="vc-stats">
+        <div class="vc-stat"><div class="vs-l">Compra</div><div class="vs-v">${fmt(v.buy)}</div></div>
+        <div class="vc-stat"><div class="vs-l">Gastos</div><div class="vs-v">${fmt(v.totalExp)}</div></div>
+        <div class="vc-stat"><div class="vs-l">Inversión</div><div class="vs-v">${fmt(v.inv)}</div></div>
+        <div class="vc-stat"><div class="vs-l">Venta</div><div class="vs-v">${v.sell?fmt(v.sell):'—'}</div></div>
+        <div class="vc-stat"><div class="vs-l">Ganancia</div><div class="vs-v ${gc}">${v.sell?fmt(v.gain):'—'}</div></div>
+        <div class="vc-stat"><div class="vs-l">Margen</div><div class="vs-v ${gc}">${v.sell?pct(v.margin):'—'}</div></div>
+      </div>${expHtml}${notesHtml}
+      <div class="vc-actions">
+        <button class="btn small" onclick="editV(${v.id})">Editar</button>
+        <button class="btn small whatsapp" onclick="shareWA(${v.id})">WhatsApp</button>
+        <button class="btn small danger" onclick="deleteV(${v.id})">Eliminar</button>
+      </div></div></div>`;
+  }).join('');
+}
+
+function editV(id){
+  const v=vehicles.find(x=>x.id===id);if(!v)return;
+  editingId=id;
+  document.getElementById('v-desc').value=v.desc;
+  document.getElementById('v-buy').value=v.buy;
+  document.getElementById('v-sell').value=v.sell||'';
+  document.getElementById('v-date').value=v.date||'';
+  document.getElementById('v-miles').value=v.miles||'';
+  document.getElementById('v-cond').value=v.cond;
+  document.getElementById('v-notes').value=v.notes||'';
+  document.getElementById('v-status').value=v.status;
+  document.getElementById('exp-list').innerHTML='';
+  tempExp=[];(v.expenses||[]).forEach(e=>addExp(e.desc,e.amt));
+  tempPhotos=(v.photos||[]).slice();renderPhotoPreviews();
+  showView('add',document.querySelectorAll('.nav-btn')[0]);
+  previewProfit();window.scrollTo(0,0);
+}
+
+function deleteV(id){
+  if(!confirm('¿Eliminar este vehículo?'))return;
+  vehicles=vehicles.filter(x=>x.id!==id);persist();renderList();
+}
+
+// ─── WHATSAPP ────────────────────────────────────────────────────────────────
+function shareWA(id){
+  const v=vehicles.find(x=>x.id===id);if(!v)return;
+  const lines=[`🚗 *${v.desc}*`,``,`💰 *Compra:* ${fmt(v.buy)}`,
+    v.totalExp>0?`🔧 *Gastos:* ${fmt(v.totalExp)}`:'',
+    `📦 *Inversión total:* ${fmt(v.inv)}`,
+    v.sell?`💵 *Venta:* ${fmt(v.sell)}`:'',
+    v.sell?`✅ *Ganancia:* ${fmt(v.gain)}`:'',
+    v.sell?`📊 *Margen:* ${pct(v.margin)} · ROI: ${pct(v.roi)}`:'',
+    v.miles?`🛣️ *Millas:* ${v.miles}`:'',v.notes?`📝 ${v.notes}`:'',``,`_AutoProfit Pro_`
+  ].filter(Boolean).join('\n');
+  window.open('https://wa.me/?text='+encodeURIComponent(lines),'_blank');
+}
+
+function shareSummaryWA(){
+  const sold=vehicles.filter(v=>v.status==='sold'&&v.sell);
+  const tg=sold.reduce((s,v)=>s+v.gain,0);
+  const ts=sold.reduce((s,v)=>s+v.sell,0);
+  const am=sold.length?sold.reduce((s,v)=>s+v.margin,0)/sold.length:0;
+  const lines=[`📊 *Resumen AutoProfit Pro*`,`👤 ${currentUser?.name||''}`,``,
+    `🚗 Total vehículos: ${vehicles.length}`,`✅ Vendidos: ${sold.length}`,
+    `📦 Inventario: ${vehicles.filter(v=>v.status==='active').length}`,``,
+    `💵 Ventas totales: ${fmt(ts)}`,`💰 Ganancia total: ${fmt(tg)}`,
+    `📈 Margen promedio: ${pct(am)}`,``,`_${new Date().toLocaleDateString('es')}_`
+  ].join('\n');
+  window.open('https://wa.me/?text='+encodeURIComponent(lines),'_blank');
+}
+
+// ─── EXCEL ───────────────────────────────────────────────────────────────────
+function exportExcel(){
+  if(!vehicles.length){showToast('No hay datos para exportar');return;}
+  const wb=XLSX.utils.book_new();
+  const rows=[['Descripción','Estado','Fecha','Millas','Condición','Compra','Gastos','Inversión','Venta','Ganancia','Margen %','ROI %','Notas']];
+  vehicles.forEach(v=>rows.push([v.desc,v.status==='sold'?'Vendido':'Inventario',v.date||'',v.miles||'',v.cond,v.buy,v.totalExp,v.inv,v.sell||'',v.sell?v.gain:'',v.sell?+v.margin.toFixed(1):'',v.sell?+v.roi.toFixed(1):'',v.notes||'']));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:25},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:10},{wch:8},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Vehículos');
+
+  const sold=vehicles.filter(v=>v.status==='sold'&&v.sell);
+  const mm={};sold.forEach(v=>{const k=(v.date||'').slice(0,7);if(!k)return;if(!mm[k]){mm[k]={g:0,c:0,i:0,s:0};}mm[k].g+=v.gain;mm[k].c++;mm[k].i+=v.inv;mm[k].s+=v.sell;});
+  const mn=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mr=[['Mes','Vendidos','Ventas','Inversión','Ganancia','Margen %']];
+  Object.entries(mm).sort().forEach(([k,d])=>{const[y,m]=k.split('-');mr.push([`${mn[+m]} ${y}`,d.c,d.s,d.i,d.g,d.s>0?+(d.g/d.s*100).toFixed(1):0]);});
+  const ws2=XLSX.utils.aoa_to_sheet(mr);XLSX.utils.book_append_sheet(wb,ws2,'Por Mes');
+
+  const ym={};sold.forEach(v=>{const y=(v.date||'').slice(0,4);if(!y)return;if(!ym[y]){ym[y]={g:0,c:0,i:0,s:0};}ym[y].g+=v.gain;ym[y].c++;ym[y].i+=v.inv;ym[y].s+=v.sell;});
+  const yr=[['Año','Vendidos','Ventas','Inversión','Ganancia','Margen %','ROI %']];
+  Object.entries(ym).sort().forEach(([y,d])=>yr.push([y,d.c,d.s,d.i,d.g,d.s>0?+(d.g/d.s*100).toFixed(1):0,d.i>0?+(d.g/d.i*100).toFixed(1):0]));
+  const ws3=XLSX.utils.aoa_to_sheet(yr);XLSX.utils.book_append_sheet(wb,ws3,'Por Año');
+  XLSX.writeFile(wb,`AutoProfit_${currentUser?.username||'export'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('Excel descargado ✓');
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function renderStats(){
+  const el=document.getElementById('stats-content');
+  if(!vehicles.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Agrega vehículos para ver estadísticas.</div></div>`;return;}
+  const sold=vehicles.filter(v=>v.status==='sold'&&v.sell);
+  const active=vehicles.filter(v=>v.status==='active');
+  const tInv=vehicles.reduce((s,v)=>s+v.inv,0);
+  const tGain=sold.reduce((s,v)=>s+v.gain,0);
+  const tSales=sold.reduce((s,v)=>s+v.sell,0);
+  const aMargin=sold.length?sold.reduce((s,v)=>s+v.margin,0)/sold.length:0;
+  const aROI=sold.length?sold.reduce((s,v)=>s+v.roi,0)/sold.length:0;
+  const winRate=sold.length?sold.filter(v=>v.gain>0).length/sold.length*100:0;
+  const best=sold.length?[...sold].sort((a,b)=>b.gain-a.gain)[0]:null;
+
+  const mm={};sold.forEach(v=>{const k=(v.date||v.savedAt?.slice(0,10)||'').slice(0,7);if(!k)return;if(!mm[k]){mm[k]={g:0,c:0,s:0};}mm[k].g+=v.gain;mm[k].c++;mm[k].s+=v.sell;});
+  const ym={};sold.forEach(v=>{const y=(v.date||v.savedAt?.slice(0,10)||'').slice(0,4);if(!y)return;if(!ym[y]){ym[y]={g:0,c:0,i:0,s:0};}ym[y].g+=v.gain;ym[y].c++;ym[y].i+=v.inv;ym[y].s+=v.sell;});
+  const mn=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  const monthsH=Object.entries(mm).sort((a,b)=>b[0].localeCompare(a[0])).map(([k,d])=>{
+    const[y,m]=k.split('-');const mar=d.s>0?d.g/d.s*100:0;const gc=d.g>=0?'text-green':'text-red';
+    return `<div class="month-card"><div class="month-header"><div><div style="font-size:13px;font-weight:500">${mn[+m]} ${y}</div><div style="font-size:11px;color:var(--muted)">${d.c} vendido${d.c>1?'s':''}</div></div><div class="${gc}" style="font-family:var(--font-mono);font-size:13px">${fmt(d.g)}</div></div>
+    <div class="bar-label"><span style="font-size:11px;color:var(--muted)">Margen</span><span class="${gc}" style="font-family:var(--font-mono);font-size:11px">${pct(Math.abs(mar))}</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.abs(mar)).toFixed(1)}%;background:${d.g>=0?'var(--green)':'var(--red)'}"></div></div></div>`;
+  }).join('')||'<div style="font-size:13px;color:var(--muted);padding:12px 0">Sin ventas con fechas aún.</div>';
+
+  const yearsH=Object.entries(ym).sort((a,b)=>b[0].localeCompare(a[0])).map(([y,d])=>{
+    const mar=d.s>0?d.g/d.s*100:0;const roi=d.i>0?d.g/d.i*100:0;const gc=d.g>=0?'text-green':'text-red';
+    return `<div class="month-card"><div class="month-header"><div><div style="font-size:16px;font-weight:500">${y}</div><div style="font-size:11px;color:var(--muted)">${d.c} vendido${d.c>1?'s':''} · ${fmt(d.s)} en ventas</div></div><div class="${gc}" style="font-family:var(--font-mono);font-size:15px">${fmt(d.g)}</div></div>
+    <div class="metric-grid three" style="margin-top:8px">
+      <div class="metric"><div class="metric-label">Margen</div><div class="metric-val ${gc}" style="font-size:15px">${pct(mar)}</div></div>
+      <div class="metric"><div class="metric-label">ROI</div><div class="metric-val ${gc}" style="font-size:15px">${pct(roi)}</div></div>
+      <div class="metric"><div class="metric-label">Invertido</div><div class="metric-val blue" style="font-size:15px">${fmt(d.i)}</div></div>
+    </div></div>`;
+  }).join('')||'<div style="font-size:13px;color:var(--muted);padding:12px 0">Sin datos anuales aún.</div>';
+
+  el.innerHTML=`
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Ganancia total</div><div class="metric-val ${tGain>=0?'green':'red'}">${fmt(tGain)}</div></div>
+    <div class="metric"><div class="metric-label">Capital invertido</div><div class="metric-val blue">${fmt(tInv)}</div></div>
+    <div class="metric"><div class="metric-label">Vendidos</div><div class="metric-val accent">${sold.length}</div></div>
+    <div class="metric"><div class="metric-label">Inventario</div><div class="metric-val amber">${active.length}</div></div>
+  </div>
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Margen promedio</div><div class="metric-val ${aMargin>=15?'green':aMargin>0?'amber':'red'}">${pct(aMargin)}</div></div>
+    <div class="metric"><div class="metric-label">ROI promedio</div><div class="metric-val ${aROI>=20?'green':aROI>0?'amber':'red'}">${pct(aROI)}</div></div>
+    <div class="metric"><div class="metric-label">Tasa de ganancia</div><div class="metric-val ${winRate>=70?'green':winRate>=50?'amber':'red'}">${pct(winRate)}</div></div>
+    <div class="metric"><div class="metric-label">Total en ventas</div><div class="metric-val">${fmt(tSales)}</div></div>
+  </div>
+  ${best?`<div class="card" style="border-color:rgba(200,240,96,.2);margin-bottom:16px">
+    ${best.photos?.length?`<img src="${best.photos[0]}" style="width:calc(100%+32px);margin:-16px -16px 12px;height:120px;object-fit:cover;border-radius:12px 12px 0 0;display:block" loading="lazy">`:''}
+    <div class="card-title">Mejor vehículo vendido</div>
+    <div style="font-size:15px;font-weight:500;margin-bottom:4px">${best.desc}</div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">${fmt(best.gain)} ganancia · ${pct(best.margin)} margen · ${pct(best.roi)} ROI</div>
+  </div>`:''}
+  <div class="btn-row" style="margin-bottom:20px">
+    <button class="btn excel" onclick="exportExcel()">📊 Exportar Excel</button>
+    <button class="btn whatsapp" onclick="shareSummaryWA()">💬 Resumen WA</button>
+  </div>
+  <div style="margin-bottom:20px"><div class="stat-section-title">Por año</div>${yearsH}</div>
+  <div><div class="stat-section-title">Por mes</div>${monthsH}</div>`;
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+(function init(){
+  const session=getSession();
+  if(session){
+    const users=getAllUsers();
+    if(users[session.username]){loginUser(session.username,session.name);}
+  }
+  document.getElementById('v-date').value=new Date().toISOString().slice(0,10);
+  // Enter key on login
+  document.getElementById('login-pass').addEventListener('keyup',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('reg-pass2').addEventListener('keyup',e=>{if(e.key==='Enter')doRegister();});
+})();
+</script>
+</body>
+</html>
